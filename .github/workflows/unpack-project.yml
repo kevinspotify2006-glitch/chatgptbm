@@ -1,0 +1,33 @@
+name: Unpack Business Manager
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unpack project
+        run: |
+          unzip -o Business-Manager-from-bundle.zip -d .
+          rm -f .github/workflows/ci.yml
+          rm -f Business-Manager-from-bundle.zip
+
+      - name: Commit unpacked project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "feat: unpack Business Manager project"
+            git push
+          fi
