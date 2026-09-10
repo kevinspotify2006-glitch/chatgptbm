@@ -5,8 +5,9 @@ import type { AdvancedState } from './advanced';
 import type { DeepSimulationState } from './deepSimulation';
 import type { World2State } from './world2';
 import type { DirectorState } from './director';
+import type { Living3State } from './living3';
 
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 export const STORAGE_KEY = 'business-manager:save';
 export const SETTINGS_KEY = 'business-manager:settings';
 export const START_CASH = 60000;
@@ -30,6 +31,7 @@ export interface GameState {
   simulation?: DeepSimulationState;
   world2?: World2State;
   director?: DirectorState;
+  living3?: Living3State;
 }
 export const DEFAULT_SETTINGS: Settings = { autosave: true, showTutorial: true, compactNumbers: true, confirmLargeSpend: true };
 export const DEFAULT_ECONOMY: EconomyState = { confidence: 100, inflation: 1, interestRate: 0.045, unemployment: 0.062, growth: 0.024 };
