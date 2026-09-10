@@ -1,5 +1,6 @@
 import type { Ctx, View } from '../app';
-import { advancedState, acquireBusiness, createContract, createRoute, RESEARCH, research, toggleAutomation, toggleSandbox } from '../../sim/advanced';
+import type { GameState } from '../../sim/state';
+import { advancedState, acquireBusiness, createContract, createRoute, createWarehouse, RESEARCH, research, toggleAutomation, toggleSandbox } from '../../sim/advanced';
 import { buildingById, playerBusinesses } from '../../sim/state';
 import { money } from '../../sim/format';
 import { bar, button, empty, h, section, stat, toast } from '../dom';
@@ -49,9 +50,10 @@ function render(ctx: Ctx, el: HTMLElement): void {
   const warehouseRows = a.warehouses.map((w) => {
     const b = buildingById(state, w.buildingId);
     const used = Math.min(1, w.used / Math.max(1, w.capacity));
-    return h('div', { class: 'list-row' }, h('div', { style: 'flex:1' }, h('div', { class: 'list-title', text: b?.name ?? w.id }), h('div', { class: 'progress-wrap' }, bar(used), h('span', { class: 'muted', text: `${Math.round(w.used)} / ${Math.round(w.capacity)} capacity` }))), h('span', { class: 'pill', text: `${w.efficiency.toFixed(1)}× efficiency` }));
+    return h('div', { class: 'list-row' }, h('div', { style: 'flex:1' }, h('div', { class: 'list-title', text: b?.address ?? w.id }), h('div', { class: 'progress-wrap' }, bar(used), h('span', { class: 'muted', text: `${Math.round(w.used)} / ${Math.round(w.capacity)} capacity` }))), h('span', { class: 'pill', text: `${w.efficiency.toFixed(1)}× efficiency` }));
   });
-  el.appendChild(section('Warehousing', ...(warehouseRows.length ? warehouseRows : [empty('No warehouses yet. Add a warehouse to create a real supply buffer.')])));
+  const availableWarehouses = state.buildings.filter((b) => b.status === 'available' && b.suitableFor.includes('retail')).slice(0, 12);
+  el.appendChild(section('Warehousing', ...warehouseRows, availableWarehouses.length ? button('Add warehouse', () => openWarehouseModal(ctx, availableWarehouses), 'btn primary') : empty('No suitable available buildings for a new warehouse.')));
 
   const routeRows = a.routes.map((r) => {
     const from = state.businesses.find((b) => b.id === r.fromBusinessId)?.name ?? r.fromBusinessId;
@@ -68,6 +70,16 @@ function render(ctx: Ctx, el: HTMLElement): void {
     ? (targets.length ? targets.map((target) => h('div', { class: 'list-row' }, h('div', { style: 'flex:1' }, h('div', { class: 'list-title', text: target.name }), h('div', { class: 'muted', text: `${money(target.totals.revenue)} revenue · reputation ${target.reputation.toFixed(0)}` })), button('Acquire', () => { if (acquireBusiness(state, target.id)) { toast(`${target.name} acquired`, 'good'); ctx.refresh(); } else toast('Acquisition failed: insufficient cash or target unavailable', 'bad'); }, 'btn primary'))) : [empty('No acquisition targets available.')])
     : [empty('Research Corporate Structure to unlock acquisitions.')];
   el.appendChild(section('Acquisitions', ...acquisitionRows));
+}
+
+function openWarehouseModal(ctx: Ctx, buildings: GameState['buildings']): void {
+  const { body, footer, close } = createSimpleModal('Add warehouse');
+  const building = h('select', {}, ...buildings.map((b) => h('option', { value: b.id, text: `${b.address} · ${b.storageCapacity} base capacity` })));
+  const capacity = h('input', { type: 'number', value: '250', min: 50, step: 25 });
+  body.appendChild(h('label', { class: 'field' }, h('span', { class: 'field-label', text: 'Building' }), building));
+  body.appendChild(h('label', { class: 'field' }, h('span', { class: 'field-label', text: 'Capacity' }), capacity));
+  footer.appendChild(button('Cancel', close, 'btn ghost'));
+  footer.appendChild(button('Build warehouse', () => { if (createWarehouse(ctx.state, building.value, Number(capacity.value))) { toast('Warehouse created', 'good'); close(); ctx.refresh(); } else toast('Could not create warehouse: check cash, building and capacity', 'bad'); }, 'btn primary'));
 }
 
 function openRouteModal(ctx: Ctx): void {
