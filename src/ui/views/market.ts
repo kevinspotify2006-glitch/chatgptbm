@@ -27,9 +27,9 @@ export function marketView(ctx: Ctx): View {
       h('div', { class: 'alert-detail', text: `${event.description} · ${event.daysLeft} days remaining` }),
     ),
   ));
-  el.appendChild(section('Live market events', ...(eventRows.length ? eventRows : [empty('No exceptional market events are active. The city is currently stable.')] )));
+  el.appendChild(section('Live market events', ...(eventRows.length ? eventRows : [empty('No exceptional market events are active. The city is currently stable.')])));
 
-  const districtRows = (Object.entries(deep.districts) as [string, NonNullable<typeof deep.districts[string]>][]).map(([district, market]) => [
+  const districtRows = Object.entries(deep.districts).map(([district, market]) => [
     h('span', { text: district.replace(/^./, (c) => c.toUpperCase()) }),
     pct(((market?.demandIndex ?? 1) - 1) * 100, 1),
     pct(((market?.footfallIndex ?? 1) - 1) * 100, 1),
@@ -42,18 +42,9 @@ export function marketView(ctx: Ctx): View {
     const cac = deep.customerAcquisitionCost[business.id] ?? 0;
     const ltv = deep.customerLifetimeValue[business.id] ?? 0;
     const type = businessType(business.typeId);
-    return [
-      h('span', { text: `${type?.icon ?? ''} ${business.name}` }),
-      pct(retention * 100, 1),
-      money(cac),
-      money(ltv),
-      pct(business.awareness, 1),
-    ];
+    return [h('span', { text: `${type?.icon ?? ''} ${business.name}` }), pct(retention * 100, 1), money(cac), money(ltv), pct(business.awareness, 1)];
   });
-  const customerContent = businessRows.length
-    ? table(['Business', 'Retention', 'Acquisition cost', 'Lifetime value', 'Awareness'], businessRows)
-    : empty('Open a business to start collecting customer economics.');
-  el.appendChild(section('Customer economics', customerContent));
+  el.appendChild(section('Customer economics', businessRows.length ? table(['Business', 'Retention', 'Acquisition cost', 'Lifetime value', 'Awareness'], businessRows) : empty('Open a business to start collecting customer economics.')));
 
   const segmentRows = Object.entries(deep.segments).map(([name, segment]) => [
     h('span', { text: name.replace(/^./, (c) => c.toUpperCase()) }),
