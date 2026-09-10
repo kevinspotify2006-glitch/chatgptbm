@@ -1,25 +1,14 @@
 import type {
-  ActiveEvent,
-  Alert,
-  Building,
-  Business,
-  Campaign,
-  Company,
-  DayRecord,
-  DistrictId,
-  Employee,
-  LedgerEntry,
-  Loan,
-  PurchaseOrder,
+  ActiveEvent, Alert, Building, Business, Campaign, Company, DayRecord, DistrictId, Employee, LedgerEntry, Loan, PurchaseOrder,
 } from './types';
 import type { AdvancedState } from './advanced';
 import type { DeepSimulationState } from './deepSimulation';
 import type { World2State } from './world2';
+import type { DirectorState } from './director';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const STORAGE_KEY = 'business-manager:save';
 export const SETTINGS_KEY = 'business-manager:settings';
-
 export const START_CASH = 60000;
 export const START_DAY = 1;
 export const START_HOUR = 8;
@@ -28,31 +17,20 @@ export const DAY_HISTORY_LIMIT = 365;
 export const ALERT_LIMIT = 60;
 export const SPEEDS = [0, 0.5, 1, 2, 4] as const;
 export const SPEED_LABELS = ['❚❚', '1×', '2×', '4×', '8×'] as const;
-
-export interface EconomyState {
-  confidence: number;
-  inflation: number;
-  interestRate: number;
-  unemployment: number;
-  growth: number;
-}
+export interface EconomyState { confidence: number; inflation: number; interestRate: number; unemployment: number; growth: number; }
 export interface DistrictState { demandIndex: number; rentIndex: number; propertyIndex: number; }
 export interface Settings { autosave: boolean; showTutorial: boolean; compactNumbers: boolean; confirmLargeSpend: boolean; }
 export interface Achievement { id: string; unlockedOnDay: number; }
-
 export interface GameState {
   version: number; seed: number; day: number; hour: number; speed: number; playerCompanyId: string;
-  companies: Company[]; businesses: Business[]; buildings: Building[]; employees: Employee[]; applicants: Employee[];
-  orders: PurchaseOrder[]; campaigns: Campaign[]; loans: Loan[]; ledger: LedgerEntry[]; dayHistory: DayRecord[];
-  alerts: Alert[]; events: ActiveEvent[]; economy: EconomyState; districts: Record<DistrictId, DistrictState>;
-  supplierSpend: Record<string, number>; achievements: Achievement[]; tutorialStep: number; settings: Settings;
+  companies: Company[]; businesses: Business[]; buildings: Building[]; employees: Employee[]; applicants: Employee[]; orders: PurchaseOrder[]; campaigns: Campaign[]; loans: Loan[]; ledger: LedgerEntry[]; dayHistory: DayRecord[];
+  alerts: Alert[]; events: ActiveEvent[]; economy: EconomyState; districts: Record<DistrictId, DistrictState>; supplierSpend: Record<string, number>; achievements: Achievement[]; tutorialStep: number; settings: Settings;
   stats: { revenueTotal: number; costsTotal: number; customersTotal: number; unitsTotal: number; peakNetWorth: number; bankrupt: boolean; };
   advanced?: AdvancedState;
   simulation?: DeepSimulationState;
-  /** Deeper strategy, lifecycle and city-development layer. */
   world2?: World2State;
+  director?: DirectorState;
 }
-
 export const DEFAULT_SETTINGS: Settings = { autosave: true, showTutorial: true, compactNumbers: true, confirmLargeSpend: true };
 export const DEFAULT_ECONOMY: EconomyState = { confidence: 100, inflation: 1, interestRate: 0.045, unemployment: 0.062, growth: 0.024 };
 export function defaultDistrictState(): DistrictState { return { demandIndex: 1, rentIndex: 1, propertyIndex: 1 }; }
