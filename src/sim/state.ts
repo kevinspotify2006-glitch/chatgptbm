@@ -14,8 +14,9 @@ import type {
 } from './types';
 import type { AdvancedState } from './advanced';
 import type { DeepSimulationState } from './deepSimulation';
+import type { World2State } from './world2';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const STORAGE_KEY = 'business-manager:save';
 export const SETTINGS_KEY = 'business-manager:settings';
 
@@ -46,10 +47,10 @@ export interface GameState {
   alerts: Alert[]; events: ActiveEvent[]; economy: EconomyState; districts: Record<DistrictId, DistrictState>;
   supplierSpend: Record<string, number>; achievements: Achievement[]; tutorialStep: number; settings: Settings;
   stats: { revenueTotal: number; costsTotal: number; customersTotal: number; unitsTotal: number; peakNetWorth: number; bankrupt: boolean; };
-  /** Persistent state for warehouses, logistics, contracts, research and corporate automation. */
   advanced?: AdvancedState;
-  /** Persistent living-economy state: consumers, market share, competitor strategy and macro events. */
   simulation?: DeepSimulationState;
+  /** Deeper strategy, lifecycle and city-development layer. */
+  world2?: World2State;
 }
 
 export const DEFAULT_SETTINGS: Settings = { autosave: true, showTutorial: true, compactNumbers: true, confirmLargeSpend: true };
