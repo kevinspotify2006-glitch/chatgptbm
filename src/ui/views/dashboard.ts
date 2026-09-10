@@ -11,6 +11,7 @@ import { calendar, clockLabel, count, money, moneySigned, moneyShort, pct } from
 import { sum } from '../../sim/util';
 import { bar, empty, h, section, stat, table } from '../dom';
 import { lineChart } from '../chart';
+import { getLivingNews, getLivingReviews } from '../../sim/living';
 
 export function dashboardView(ctx: Ctx): View {
   const el = h('div', { class: 'view' });
@@ -197,6 +198,23 @@ export function dashboardView(ctx: Ctx): View {
     }
   }
   right.appendChild(economyPanel);
+
+  // --------------------------------------------------------- living world
+  const livingPanel = section('Living Northgate');
+  const news = getLivingNews(state).slice(0, 5);
+  const reviews = getLivingReviews(state).slice(0, 3);
+  if (news.length === 0 && reviews.length === 0) {
+    livingPanel.appendChild(empty('The city is quiet for now. Keep trading and the world will react.'));
+  }
+  for (const item of news) {
+    livingPanel.appendChild(h('div', { class: 'alert-row' }, h('span', { class: 'alert-dot info' }), h('div', { style: 'flex:1;min-width:0' }, h('div', { class: 'alert-title', text: `${item.category} · ${item.headline}` }), h('div', { class: 'alert-detail', text: item.detail }))));
+  }
+  for (const review of reviews) {
+    const stars = '★'.repeat(Math.round(review.score)) + '☆'.repeat(Math.max(0, 5 - Math.round(review.score)));
+    const business = businesses.find((b) => b.id === review.businessId);
+    livingPanel.appendChild(h('div', { style: 'margin-top:10px;padding-top:10px;border-top:1px solid var(--line)' }, h('div', { class: 'good', text: `${stars} ${review.score.toFixed(1)}` }), h('div', { class: 'tiny', text: `“${review.text}”${business ? ` — ${business.name}` : ''}` })));
+  }
+  left.appendChild(livingPanel);
 
   el.appendChild(h('div', { class: 'grid cols-2' }, left, right));
   return { el };

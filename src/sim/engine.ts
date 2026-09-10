@@ -13,6 +13,7 @@ import { checkAchievements } from './achievements';
 import { pushAlert } from './alerts';
 import { DAYS_PER_MONTH } from './format';
 import { clamp, sum } from './util';
+import { settleLivingWorld } from './living';
 
 /**
  * The simulation engine.
@@ -155,6 +156,7 @@ export class Engine {
 
     updateCreditRating(state);
     checkAchievements(state);
+    settleLivingWorld(state);
 
     if (state.day % 7 === 0) this.settleWeek();
     if (state.day % DAYS_PER_MONTH === 0) this.settleMonth();
