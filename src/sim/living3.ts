@@ -1,6 +1,6 @@
 import type { GameState } from './state';
 import { playerBusinesses, playerCompany } from './state';
-import { clamp, sum } from './util';
+import { sum } from './util';
 import { businessType } from '../data/businessTypes';
 import type { DistrictId } from './types';
 import { pushAlert } from './alerts';
@@ -24,4 +24,4 @@ export function settleLiving3(state:GameState):void{detect(state);records(state)
 export function getStories(state:GameState):WorldStory[]{return living3State(state).stories;}
 export function getWorldDecisions(state:GameState):WorldDecision[]{return living3State(state).decisions;}
 export function getRecords(state:GameState){return living3State(state).records;}
-export function explainMetric(state:GameState,metric:'revenue'|'profit'|'customers'):string[]{const m=playerMetrics(state);const out:string[]=[];for(const b of m.businesses){const type=businessType(b.typeId);if(!type)continue;const utilization=b.today.customers/Math.max(1,type.baseCustomers);if(utilization<.6)out.push(`${b.name}: demand/utilisation is below potential.`);if(b.today.lostCustomers>0)out.push(`${b.name}: ${b.today.lostCustomers} customers were lost, indicating capacity or stock pressure.`);if(b.serviceQuality<60)out.push(`${b.name}: service quality is limiting conversion or repeat business.`);}if(state.economy.confidence<90)out.push('Consumer confidence is below the starting level, reducing discretionary demand.');if(state.economy.growth<0)out.push('The economy is contracting, which can soften demand.');if(!out.length)out.push('No dominant negative driver is detected in the latest operating data.');return out.slice(0,5);}
+export function explainMetric(state:GameState,_metric:'revenue'|'profit'|'customers'):string[]{const m=playerMetrics(state);const out:string[]=[];for(const b of m.businesses){const type=businessType(b.typeId);if(!type)continue;const utilization=b.today.customers/Math.max(1,type.baseCustomers);if(utilization<.6)out.push(`${b.name}: demand/utilisation is below potential.`);if(b.today.lostCustomers>0)out.push(`${b.name}: ${b.today.lostCustomers} customers were lost, indicating capacity or stock pressure.`);if(b.serviceQuality<60)out.push(`${b.name}: service quality is limiting conversion or repeat business.`);}if(state.economy.confidence<90)out.push('Consumer confidence is below the starting level, reducing discretionary demand.');if(state.economy.growth<0)out.push('The economy is contracting, which can soften demand.');if(!out.length)out.push('No dominant negative driver is detected in the latest operating data.');return out.slice(0,5);}
