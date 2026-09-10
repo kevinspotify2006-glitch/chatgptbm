@@ -19,27 +19,9 @@ import { settingsView } from './ui/views/settings';
 import { advancedView } from './ui/views/advanced';
 import { marketView } from './ui/views/market';
 import { strategyView } from './ui/views/strategy';
-
-const root = document.getElementById('app');
-if (!root) throw new Error('#app is missing from the page');
-let app: App | null = null;
-function boot(state: GameState): void {
-  app?.stop();
-  const engine = new Engine(state);
-  app = new App(root as HTMLElement, engine);
-  app.register({ route: 'dashboard', label: 'Dashboard', icon: '▦', factory: dashboardView });
-  app.register({ route: 'map', label: 'Map', icon: '🗺', factory: mapView });
-  app.register({ route: 'businesses', label: 'Businesses', icon: '🏬', factory: businessesView, badge: (s) => playerBusinesses(s).filter((b) => b.status === 'setup').length });
-  app.register({ route: 'employees', label: 'Employees', icon: '👥', factory: employeesView });
-  app.register({ route: 'inventory', label: 'Inventory', icon: '📦', factory: inventoryView });
-  app.register({ route: 'marketing', label: 'Marketing', icon: '📣', factory: marketingView });
-  app.register({ route: 'finance', label: 'Finance', icon: '💶', factory: financeView });
-  app.register({ route: 'property', label: 'Real estate', icon: '🏢', factory: propertyView });
-  app.register({ route: 'strategy', label: 'Strategy', icon: '🎯', factory: strategyView });
-  app.register({ route: 'advanced', label: 'Operations', icon: '⚙️', factory: advancedView });
-  app.register({ route: 'market', label: 'Market Intel', icon: '📈', factory: marketView });
-  app.register({ route: 'reports', label: 'Reports', icon: '📊', factory: reportsView, badge: (s) => unreadAlerts(s).filter((a) => a.priority !== 'info').length });
-  app.register({ route: 'settings', label: 'Settings', icon: '⚙', factory: settingsView });
-  app.start();
-}
-showWelcome(root as HTMLElement, boot);
+import { directorView } from './ui/views/director';
+const root=document.getElementById('app');
+if(!root)throw new Error('#app is missing from the page');
+let app:App|null=null;
+function boot(state:GameState):void{app?.stop();const engine=new Engine(state);app=new App(root as HTMLElement,engine);app.register({route:'dashboard',label:'Dashboard',icon:'▦',factory:dashboardView});app.register({route:'map',label:'Map',icon:'🗺',factory:mapView});app.register({route:'businesses',label:'Businesses',icon:'🏬',factory:businessesView,badge:s=>playerBusinesses(s).filter(b=>b.status==='setup').length});app.register({route:'employees',label:'Employees',icon:'👥',factory:employeesView});app.register({route:'inventory',label:'Inventory',icon:'📦',factory:inventoryView});app.register({route:'marketing',label:'Marketing',icon:'📣',factory:marketingView});app.register({route:'finance',label:'Finance',icon:'💶',factory:financeView});app.register({route:'property',label:'Real estate',icon:'🏢',factory:propertyView});app.register({route:'strategy',label:'Strategy',icon:'🎯',factory:strategyView});app.register({route:'director',label:'Director',icon:'🧠',factory:directorView});app.register({route:'advanced',label:'Operations',icon:'⚙️',factory:advancedView});app.register({route:'market',label:'Market Intel',icon:'📈',factory:marketView});app.register({route:'reports',label:'Reports',icon:'📊',factory:reportsView,badge:s=>unreadAlerts(s).filter(a=>a.priority!=='info').length});app.register({route:'settings',label:'Settings',icon:'⚙',factory:settingsView});app.start();}
+showWelcome(root as HTMLElement,boot);
