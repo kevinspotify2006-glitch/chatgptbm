@@ -15,6 +15,7 @@ import { DAYS_PER_MONTH } from './format';
 import { clamp, sum } from './util';
 import { settleLivingWorld } from './living';
 import { settleAdvancedWorld } from './advanced';
+import { settleDeepSimulation } from './deepSimulation';
 
 export class Engine {
   state: GameState;
@@ -42,7 +43,7 @@ export class Engine {
     for (const building of state.buildings) if (building.renovationEndsOnDay !== null && state.day >= building.renovationEndsOnDay) { building.renovationEndsOnDay = null; building.condition = 100; pushAlert(state, 'info', 'Renovation complete', `${building.address} is back to full condition.`, null); }
     const { revenue, costs } = dayTotals(state, state.day); const worth = netWorth(state);
     state.dayHistory.push({ day: state.day, revenue, costs, profit: revenue - costs, cash: company.cash, netWorth: worth, customers }); if (state.dayHistory.length > DAY_HISTORY_LIMIT) state.dayHistory.shift(); state.stats.peakNetWorth = Math.max(state.stats.peakNetWorth, worth);
-    updateCreditRating(state); checkAchievements(state); settleLivingWorld(state); settleAdvancedWorld(state);
+    updateCreditRating(state); checkAchievements(state); settleLivingWorld(state); settleAdvancedWorld(state); settleDeepSimulation(state);
     if (state.day % 7 === 0) this.settleWeek(); if (state.day % DAYS_PER_MONTH === 0) this.settleMonth(); this.checkSolvency(); emit('day', { day: state.day });
   }
   private settleWeek(): void { competitorWeekly(this.state); }

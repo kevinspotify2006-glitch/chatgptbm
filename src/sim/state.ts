@@ -13,8 +13,9 @@ import type {
   PurchaseOrder,
 } from './types';
 import type { AdvancedState } from './advanced';
+import type { DeepSimulationState } from './deepSimulation';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const STORAGE_KEY = 'business-manager:save';
 export const SETTINGS_KEY = 'business-manager:settings';
 
@@ -47,6 +48,8 @@ export interface GameState {
   stats: { revenueTotal: number; costsTotal: number; customersTotal: number; unitsTotal: number; peakNetWorth: number; bankrupt: boolean; };
   /** Persistent state for warehouses, logistics, contracts, research and corporate automation. */
   advanced?: AdvancedState;
+  /** Persistent living-economy state: consumers, market share, competitor strategy and macro events. */
+  simulation?: DeepSimulationState;
 }
 
 export const DEFAULT_SETTINGS: Settings = { autosave: true, showTutorial: true, compactNumbers: true, confirmLargeSpend: true };
