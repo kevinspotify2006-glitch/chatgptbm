@@ -11,200 +11,40 @@ const INDEX_KEY = 'business-manager:saves';
 const SLOT_PREFIX = 'business-manager:save:';
 export const AUTOSAVE_ID = 'autosave';
 
-export interface SaveSlot {
-  id: string;
-  name: string;
-  day: number;
-  savedAt: number;
-  netWorth: number;
-  company: string;
-  auto: boolean;
-}
+export interface SaveSlot { id: string; name: string; day: number; savedAt: number; netWorth: number; company: string; auto: boolean; }
+function storage(): Storage | null { try { const probe = '__bm_probe__'; window.localStorage.setItem(probe, '1'); window.localStorage.removeItem(probe); return window.localStorage; } catch { return null; } }
+export function listSaves(): SaveSlot[] { const store = storage(); if (!store) return []; try { const raw = store.getItem(INDEX_KEY); if (!raw) return []; const parsed: unknown = JSON.parse(raw); if (!Array.isArray(parsed)) return []; return parsed.filter(isRecord).map((entry) => ({ id: str(entry.id, ''), name: str(entry.name, 'Save'), day: num(entry.day, 1), savedAt: num(entry.savedAt, 0), netWorth: num(entry.netWorth, 0), company: str(entry.company, ''), auto: bool(entry.auto, false) })).filter((slot) => slot.id !== '').sort((a, b) => b.savedAt - a.savedAt); } catch { return []; } }
+function writeIndex(slots: SaveSlot[]): void { const store = storage(); if (!store) return; try { store.setItem(INDEX_KEY, JSON.stringify(slots)); } catch { /* quota exceeded */ } }
+export function saveGame(state: GameState, id: string, name: string, auto = false): { ok: boolean; message: string } { const store = storage(); if (!store) return { ok: false, message: 'This browser is blocking local storage, so saving is unavailable.' }; try { store.setItem(SLOT_PREFIX + id, JSON.stringify(state)); } catch { return { ok: false, message: 'Saving failed: browser storage is full.' }; } const company = state.companies.find((c) => c.id === state.playerCompanyId); const slots = listSaves().filter((slot) => slot.id !== id); slots.push({ id, name, day: state.day, savedAt: Date.now(), netWorth: netWorth(state), company: company?.name ?? '', auto }); writeIndex(slots); return { ok: true, message: auto ? 'Autosaved.' : `Saved as “${name}”.` }; }
+export function loadGame(id: string): GameState | null { const store = storage(); if (!store) return null; try { const raw = store.getItem(SLOT_PREFIX + id); if (!raw) return null; const parsed: unknown = JSON.parse(raw); const state = migrate(parsed); if (state) reseedGameRng(state.seed || Date.now() >>> 0); return state; } catch { return null; } }
+export function deleteSave(id: string): void { const store = storage(); if (!store) return; try { store.removeItem(SLOT_PREFIX + id); } catch { /* ignore */ } writeIndex(listSaves().filter((slot) => slot.id !== id)); }
+export function renameSave(id: string, name: string): void { const slots = listSaves().map((slot) => (slot.id === id ? { ...slot, name: name.trim().slice(0, 40) || slot.name } : slot)); writeIndex(slots); }
+export function hasAnySave(): boolean { return listSaves().length > 0; }
 
-/** localStorage can be unavailable (private mode, blocked cookies); never throw. */
-function storage(): Storage | null {
-  try {
-    const probe = '__bm_probe__';
-    window.localStorage.setItem(probe, '1');
-    window.localStorage.removeItem(probe);
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-export function listSaves(): SaveSlot[] {
-  const store = storage();
-  if (!store) return [];
-  try {
-    const raw = store.getItem(INDEX_KEY);
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter(isRecord)
-      .map((entry) => ({
-        id: str(entry.id, ''),
-        name: str(entry.name, 'Save'),
-        day: num(entry.day, 1),
-        savedAt: num(entry.savedAt, 0),
-        netWorth: num(entry.netWorth, 0),
-        company: str(entry.company, ''),
-        auto: bool(entry.auto, false),
-      }))
-      .filter((slot) => slot.id !== '')
-      .sort((a, b) => b.savedAt - a.savedAt);
-  } catch {
-    return [];
-  }
-}
-
-function writeIndex(slots: SaveSlot[]): void {
-  const store = storage();
-  if (!store) return;
-  try {
-    store.setItem(INDEX_KEY, JSON.stringify(slots));
-  } catch {
-    /* quota exceeded — the caller reports the failed save */
-  }
-}
-
-export function saveGame(state: GameState, id: string, name: string, auto = false): { ok: boolean; message: string } {
-  const store = storage();
-  if (!store) return { ok: false, message: 'This browser is blocking local storage, so saving is unavailable.' };
-  try {
-    store.setItem(SLOT_PREFIX + id, JSON.stringify(state));
-  } catch {
-    return { ok: false, message: 'Saving failed: browser storage is full.' };
-  }
-  const company = state.companies.find((c) => c.id === state.playerCompanyId);
-  const slots = listSaves().filter((slot) => slot.id !== id);
-  slots.push({
-    id,
-    name,
-    day: state.day,
-    savedAt: Date.now(),
-    netWorth: netWorth(state),
-    company: company?.name ?? '',
-    auto,
-  });
-  writeIndex(slots);
-  return { ok: true, message: auto ? 'Autosaved.' : `Saved as “${name}”.` };
-}
-
-export function loadGame(id: string): GameState | null {
-  const store = storage();
-  if (!store) return null;
-  try {
-    const raw = store.getItem(SLOT_PREFIX + id);
-    if (!raw) return null;
-    const parsed: unknown = JSON.parse(raw);
-    const state = migrate(parsed);
-    if (state) reseedGameRng(state.seed || Date.now() >>> 0);
-    return state;
-  } catch {
-    return null;
-  }
-}
-
-export function deleteSave(id: string): void {
-  const store = storage();
-  if (!store) return;
-  try {
-    store.removeItem(SLOT_PREFIX + id);
-  } catch {
-    /* ignore */
-  }
-  writeIndex(listSaves().filter((slot) => slot.id !== id));
-}
-
-export function renameSave(id: string, name: string): void {
-  const slots = listSaves().map((slot) => (slot.id === id ? { ...slot, name: name.trim().slice(0, 40) || slot.name } : slot));
-  writeIndex(slots);
-}
-
-export function hasAnySave(): boolean {
-  return listSaves().length > 0;
-}
-
-/**
- * Turns unknown JSON into a usable GameState, or null if it is too broken to
- * repair. Missing fields are filled with defaults so an older save still loads
- * after new systems are added.
- */
+/** Turns unknown JSON into a usable GameState while preserving every known persistent subsystem. */
 export function migrate(input: unknown): GameState | null {
   if (!isRecord(input)) return null;
   const version = num(input.version, 0);
-  if (version > SAVE_VERSION) return null; // saved by a newer build
-
-  // Everything the game cannot rebuild must be present.
+  if (version > SAVE_VERSION) return null;
   if (!Array.isArray(input.buildings) || !Array.isArray(input.companies)) return null;
   if (typeof input.playerCompanyId !== 'string') return null;
-
   const districts = {} as Record<DistrictId, DistrictState>;
   const savedDistricts = isRecord(input.districts) ? input.districts : {};
-  for (const def of DISTRICTS) {
-    const entry = savedDistricts[def.id];
-    districts[def.id] = isRecord(entry)
-      ? {
-          demandIndex: num(entry.demandIndex, 1),
-          rentIndex: num(entry.rentIndex, 1),
-          propertyIndex: num(entry.propertyIndex, 1),
-        }
-      : defaultDistrictState();
-  }
-
+  for (const def of DISTRICTS) { const entry = savedDistricts[def.id]; districts[def.id] = isRecord(entry) ? { demandIndex: num(entry.demandIndex, 1), rentIndex: num(entry.rentIndex, 1), propertyIndex: num(entry.propertyIndex, 1) } : defaultDistrictState(); }
   const economy = isRecord(input.economy) ? input.economy : {};
   const settings = isRecord(input.settings) ? input.settings : {};
   const stats = isRecord(input.stats) ? input.stats : {};
-
   const state = {
-    version: SAVE_VERSION,
-    seed: num(input.seed, Date.now() >>> 0),
-    day: Math.max(1, num(input.day, 1)),
-    hour: Math.min(23, Math.max(0, num(input.hour, 8))),
-    speed: Math.min(4, Math.max(0, num(input.speed, 0))),
-    playerCompanyId: input.playerCompanyId,
-    companies: input.companies,
-    businesses: Array.isArray(input.businesses) ? input.businesses : [],
-    buildings: input.buildings,
-    employees: Array.isArray(input.employees) ? input.employees : [],
-    applicants: Array.isArray(input.applicants) ? input.applicants : [],
-    orders: Array.isArray(input.orders) ? input.orders : [],
-    campaigns: Array.isArray(input.campaigns) ? input.campaigns : [],
-    loans: Array.isArray(input.loans) ? input.loans : [],
-    ledger: Array.isArray(input.ledger) ? input.ledger : [],
-    dayHistory: Array.isArray(input.dayHistory) ? input.dayHistory : [],
-    alerts: Array.isArray(input.alerts) ? input.alerts : [],
-    events: Array.isArray(input.events) ? input.events : [],
-    economy: {
-      confidence: num(economy.confidence, DEFAULT_ECONOMY.confidence),
-      inflation: num(economy.inflation, DEFAULT_ECONOMY.inflation),
-      interestRate: num(economy.interestRate, DEFAULT_ECONOMY.interestRate),
-      unemployment: num(economy.unemployment, DEFAULT_ECONOMY.unemployment),
-      growth: num(economy.growth, DEFAULT_ECONOMY.growth),
-    },
-    districts,
-    supplierSpend: isRecord(input.supplierSpend) ? (input.supplierSpend as Record<string, number>) : {},
-    achievements: Array.isArray(input.achievements) ? input.achievements : [],
-    tutorialStep: num(input.tutorialStep, 0),
-    settings: {
-      autosave: bool(settings.autosave, DEFAULT_SETTINGS.autosave),
-      showTutorial: bool(settings.showTutorial, DEFAULT_SETTINGS.showTutorial),
-      compactNumbers: bool(settings.compactNumbers, DEFAULT_SETTINGS.compactNumbers),
-      confirmLargeSpend: bool(settings.confirmLargeSpend, DEFAULT_SETTINGS.confirmLargeSpend),
-    },
-    stats: {
-      revenueTotal: num(stats.revenueTotal, 0),
-      costsTotal: num(stats.costsTotal, 0),
-      customersTotal: num(stats.customersTotal, 0),
-      unitsTotal: num(stats.unitsTotal, 0),
-      peakNetWorth: num(stats.peakNetWorth, 0),
-      bankrupt: bool(stats.bankrupt, false),
-    },
+    version: SAVE_VERSION, seed: num(input.seed, Date.now() >>> 0), day: Math.max(1, num(input.day, 1)), hour: Math.min(23, Math.max(0, num(input.hour, 8))), speed: Math.min(4, Math.max(0, num(input.speed, 0))), playerCompanyId: input.playerCompanyId,
+    companies: input.companies, businesses: Array.isArray(input.businesses) ? input.businesses : [], buildings: input.buildings, employees: Array.isArray(input.employees) ? input.employees : [], applicants: Array.isArray(input.applicants) ? input.applicants : [], orders: Array.isArray(input.orders) ? input.orders : [], campaigns: Array.isArray(input.campaigns) ? input.campaigns : [], loans: Array.isArray(input.loans) ? input.loans : [], ledger: Array.isArray(input.ledger) ? input.ledger : [], dayHistory: Array.isArray(input.dayHistory) ? input.dayHistory : [], alerts: Array.isArray(input.alerts) ? input.alerts : [], events: Array.isArray(input.events) ? input.events : [],
+    economy: { confidence: num(economy.confidence, DEFAULT_ECONOMY.confidence), inflation: num(economy.inflation, DEFAULT_ECONOMY.inflation), interestRate: num(economy.interestRate, DEFAULT_ECONOMY.interestRate), unemployment: num(economy.unemployment, DEFAULT_ECONOMY.unemployment), growth: num(economy.growth, DEFAULT_ECONOMY.growth) }, districts,
+    supplierSpend: isRecord(input.supplierSpend) ? input.supplierSpend as Record<string, number> : {}, achievements: Array.isArray(input.achievements) ? input.achievements : [], tutorialStep: num(input.tutorialStep, 0),
+    settings: { autosave: bool(settings.autosave, DEFAULT_SETTINGS.autosave), showTutorial: bool(settings.showTutorial, DEFAULT_SETTINGS.showTutorial), compactNumbers: bool(settings.compactNumbers, DEFAULT_SETTINGS.compactNumbers), confirmLargeSpend: bool(settings.confirmLargeSpend, DEFAULT_SETTINGS.confirmLargeSpend) },
+    stats: { revenueTotal: num(stats.revenueTotal, 0), costsTotal: num(stats.costsTotal, 0), customersTotal: num(stats.customersTotal, 0), unitsTotal: num(stats.unitsTotal, 0), peakNetWorth: num(stats.peakNetWorth, 0), bankrupt: bool(stats.bankrupt, false) },
+    advanced: isRecord(input.advanced) ? input.advanced : undefined,
+    simulation: isRecord(input.simulation) ? input.simulation : undefined,
+    world2: isRecord(input.world2) ? input.world2 : undefined,
   } as unknown as GameState;
-
-  // The player's company must exist, or nothing else makes sense.
   if (!state.companies.some((company) => company.id === state.playerCompanyId)) return null;
   return state;
 }
