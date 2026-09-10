@@ -1,4 +1,5 @@
 import './ui/styles.css';
+import './ui/advanced.css';
 import type { GameState } from './sim/state';
 import { playerBusinesses } from './sim/state';
 import { Engine } from './sim/engine';
@@ -15,11 +16,15 @@ import { financeView } from './ui/views/finance';
 import { propertyView } from './ui/views/property';
 import { reportsView } from './ui/views/reports';
 import { settingsView } from './ui/views/settings';
+import { advancedView } from './ui/views/advanced';
 
-const root = document.getElementById('app'); if (!root) throw new Error('#app is missing from the page');
+const root = document.getElementById('app');
+if (!root) throw new Error('#app is missing from the page');
 let app: App | null = null;
 function boot(state: GameState): void {
-  app?.stop(); const engine = new Engine(state); app = new App(root as HTMLElement, engine);
+  app?.stop();
+  const engine = new Engine(state);
+  app = new App(root as HTMLElement, engine);
   app.register({ route: 'dashboard', label: 'Dashboard', icon: '▦', factory: dashboardView });
   app.register({ route: 'map', label: 'Map', icon: '🗺', factory: mapView });
   app.register({ route: 'businesses', label: 'Businesses', icon: '🏬', factory: businessesView, badge: (s) => playerBusinesses(s).filter((b) => b.status === 'setup').length });
@@ -28,6 +33,7 @@ function boot(state: GameState): void {
   app.register({ route: 'marketing', label: 'Marketing', icon: '📣', factory: marketingView });
   app.register({ route: 'finance', label: 'Finance', icon: '💶', factory: financeView });
   app.register({ route: 'property', label: 'Real estate', icon: '🏢', factory: propertyView });
+  app.register({ route: 'advanced', label: 'Operations', icon: '⚙️', factory: advancedView });
   app.register({ route: 'reports', label: 'Reports', icon: '📊', factory: reportsView, badge: (s) => unreadAlerts(s).filter((a) => a.priority !== 'info').length });
   app.register({ route: 'settings', label: 'Settings', icon: '⚙', factory: settingsView });
   app.start();
